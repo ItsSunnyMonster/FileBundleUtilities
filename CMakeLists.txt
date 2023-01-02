@@ -8,4 +8,10 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(AssetPackCompiler "src/main.cpp")
+add_subdirectory(vendor/fmt)
+
+add_executable(AssetPackCompiler "src/main.cpp" "src/HelperFunctions.hpp")
+
+target_link_libraries(AssetPackCompiler PRIVATE fmt::fmt)
+
+target_compile_definitions(AssetPackCompiler PRIVATE $<$<CONFIG:Debug>:DEBUG>)
