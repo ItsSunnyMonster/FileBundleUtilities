@@ -1,53 +1,15 @@
-#include <iostream>
+#include "ocap.hpp"
+
 #include <fstream>
-#include <filesystem>
-#include <fmt/format.h>
-#include <cstdio>
-#include <chrono>
-#include <thread>
+#include <iostream>
 
 #include "HelperFunctions.hpp"
 
-#define FILE_HEADER "OCAPv0.0"
-
-int main(int argc, char **argv) {
-#ifndef DEBUG
-  // Get the argument count minus the first (since that just gives us the path
-  // to the executable)
-  uint8_t argumentCount = argc - 1;
-
-  // Check argument count
-  if (argumentCount != 1 && argumentCount != 2) {
-    printUsage();
-    return -1;
-  }
-
-  // Check for help and version flags
-  if (argv[1] == "-h" || argv[1] == "--help") {
-    printUsage();
-    return 0;
-  }
-  if (argv[1] == "-v" || argv[1] == "--version") {
-    printVersion();
-    return 0;
-  }
-
-  // If there's only one argument and it is not help or version
-  if (argumentCount == 1) {
-    printUsage();
-    return -2;
-  }
-
-  // Get the arguments
-  std::string assetsPath = argv[1];
-  std::string outputFile = argv[2];
-#endif // !DEBUG
-
-#if defined DEBUG
-  std::string assetsPath = "Assets";
-  std::string outputFile = "out.ocap";
-#endif // DEBUG
-
+void ocap::compile(std::string assetsPath, const std::string &outputFile,
+                   void (*onAdd)(const std::string &filename,
+                                 uint32_t fileIndex, uint32_t fileCount),
+                   void (*onAdded)(const std::string &),
+                   void (*onWriteData)()) {
   // Remove trailing slash
   if (assetsPath[assetsPath.length() - 1] == '/' ||
       assetsPath[assetsPath.length() - 1] == '\\')
@@ -87,10 +49,7 @@ int main(int argc, char **argv) {
     std::string relativePath = pathString.substr(assetsPath.length() + 1);
     replaceAll(relativePath, '\\', '/');
 
-    // Adding <file>
-    //   i/all files
-    std::cout << "Adding " << relativePath << std::endl
-              << "  " << fileIndex + 1 << "/" << fileCount << " files";
+    onAdd(relativePath, fileIndex, fileCount);
 
     outputFileStream.write(encrypt(relativePath).c_str(),
                            relativePath.length());
@@ -120,8 +79,7 @@ int main(int argc, char **argv) {
     // std::this_thread::sleep_for(std::chrono::seconds(2));
 
     // Clear the two lines then print added
-    std::cout << "\33[2K\033[A\33[2K\r"
-              << "Added " << relativePath << std::endl;
+    onAdded(relativePath);
 
     fileIndex++;
   }
@@ -132,7 +90,7 @@ int main(int argc, char **argv) {
   tempDataFileOutStream.close();
 
   // Open the temp file and write it to the output file
-  std::cout << std::endl << "Writing data...";
+  onWriteData();
   std::ifstream tempDataFileInStream(outputFile + ".tmp", std::ios::binary);
   outputFileStream << tempDataFileInStream.rdbuf();
   tempDataFileInStream.close();
@@ -140,9 +98,9 @@ int main(int argc, char **argv) {
   // Close the output file
   outputFileStream.close();
 
-  std::cout << "\33[2K\r"
-            << "Done!" << std::endl
-            << "Outputted to " << outputFile << std::endl;
-
   remove((outputFile + ".tmp").c_str());
+}
+
+std::string ocap::getVersionString() {
+  return "Asset Pack Library v0.0";
 }

@@ -1,24 +1,4 @@
-#pragma once
-
-#include <filesystem>
-#include <format>
-#include <algorithm>
-
-#define DATA_FLAGS_ENCRYPTED 0b0000'0001
-
-enum class FileType {
-  TEXT,
-  BINARY
-};
-
-void printUsage() {
-  std::cout << "Usage: AssetPackCompiler.exe <Path to assets> <Output file>"
-            << std::endl;
-}
-
-void printVersion() {
-  std::cout << "AssetPackCompiler v0.0" << std::endl;
-}
+#include "HelperFunctions.hpp"
 
 uint32_t getFileCountInDirectory(const std::filesystem::path &directory) {
   auto assetsIterator =
@@ -53,10 +33,9 @@ std::string encrypt(const std::string &input) {
   return result;
 }
 
-// Returns true if the file is encrypted with XOR
 bool writeDataToBinary(const std::filesystem::path &in, std::ofstream &out) {
   FileType type;
-  if (in.extension() == ".txt")
+  if (in.extension() == ".json")
     type = FileType::TEXT;
   else
     type = FileType::BINARY;
